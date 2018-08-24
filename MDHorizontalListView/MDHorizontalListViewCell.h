@@ -15,6 +15,8 @@
 @property (nonatomic, assign) BOOL selected;
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated;
 
+- (void)setSelectedProgress:(CGFloat)progress animated:(BOOL)animated;
+
 @property (nonatomic, assign) BOOL highlighted;
 - (void)setHighlighted:(BOOL)highlighted animated:(BOOL)animated;
 

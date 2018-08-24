@@ -15,8 +15,15 @@ typedef NS_ENUM(NSUInteger, MDHorizontalListViewPosition) {
     MDHorizontalListViewPositionLeft,       /** Cell alignment from the left side of the list view */
     MDHorizontalListViewPositionRight,      /** Cell alignment from the right side of the list view */
     MDHorizontalListViewPositionCenter,     /** Cell alignment at the center of the list view */
-    
 };
+
+typedef NS_ENUM(NSUInteger, MDHorizontalListViewCellSelectionStyle) {
+    MDHorizontalListViewCellSelectionStyleNone = 0,
+    MDHorizontalListViewCellSelectionStyleGray,
+    MDHorizontalListViewCellSelectionStyleBlue,
+};
+
+UIKIT_EXTERN const CGFloat MDHorizontalListViewIndicatorWidthDynamic;
 
 @class MDHorizontalListView;
 
@@ -99,14 +106,41 @@ typedef NS_ENUM(NSUInteger, MDHorizontalListViewPosition) {
 /** The list datasource MUST be implemented to populate the list */
 @property (nonatomic, weak) id<MDHorizontalListViewDataSource> dataSource;
 
+/** Style for selected cell */
+@property (nonatomic, assign) MDHorizontalListViewCellSelectionStyle selectionStyle;
+
+/** Allow none selection */
+@property (nonatomic, assign) BOOL allowsNoneSelection;
+
+/** Allow multiple selections */
+@property (nonatomic, assign) BOOL allowsMultipleSelection;
+
 /** The selected indexes of cells. */
 @property (nonatomic, copy, readonly) NSIndexSet *selectedIndexes;
+
+/** The index of selected cell. */
+@property (nonatomic, assign, readonly) NSUInteger selectedIndex;
 
 /** The hightlighted indexes of cells. */
 @property (nonatomic, copy, readonly) NSIndexSet *highlightedIndexes;
 
-/** spacing between cells, the default value is 0.0f */
+/** Spacing between cells, the default value is 0.0f */
 @property (nonatomic, assign) CGFloat cellSpacing;
+
+/** Ability of indicator, it's unavailabel if NO. */
+@property (nonatomic, assign, getter=isIndicatorEnabled) BOOL indicatorEnabled;
+
+/** background color of indicator, default is 2.f */
+@property (nonatomic, strong) UIColor *indicatorBackgroundColor;
+
+/** Height of indicator, default is 2.f */
+@property (nonatomic, assign) CGFloat indicatorHeight;
+
+/** Width of indicator, default is dynamic */
+@property (nonatomic, assign) CGFloat indicatorWidth;
+
+/** The index progress for indicator. */
+@property (nonatomic, assign, readonly) CGFloat indexProgress;
 
 /**
  *  Method to reload the list datasource
@@ -147,12 +181,33 @@ typedef NS_ENUM(NSUInteger, MDHorizontalListViewPosition) {
 - (void)scrollToIndex:(NSInteger)index animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
 
 /**
+ *  Method to select cell for a specific index progress, single selection only.
+ *
+ *  @param progress - the index progress of the list to select
+ *  @param animated - perform the scrolling using an animatiom
+ */
+- (void)selectIndexProgress:(CGFloat)progress animated:(BOOL)animated;
+
+/**
+ *  Method to select cell for a specific index progress, single selection only.
+ *
+ *  @param progress - the index progress of the list to select
+ *  @param animated - perform the scrolling using an animatiom
+ *  @param position - the nearest position to scroll the list to the cell's view frame
+ *
+ *  @discussion this method use UIScrollView 'scrollRectToVisible:animated:', if MDHorizontalListViewPositionNone is used
+ *  the nearest position containing the cell frame depending to the scrolling direction.
+ */
+- (void)selectIndexProgress:(CGFloat)progress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
+
+/**
  *  Method to set selected a cell at a specific index 
  *
  *  @param index - the given index to select in the datasource
  *  @param animated - select the cell using animation (the cell it self has to implement the animation)
  */
 - (void)selectCellAtIndex:(NSInteger)index animated:(BOOL)animated;
+- (void)selectCellAtIndex:(NSInteger)index animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
 
 /**
  *  Method to set deselected a cell at a specific index

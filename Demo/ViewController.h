@@ -9,9 +9,6 @@
 #import <UIKit/UIKit.h>
 #import "MDHorizontalListView.h"
 
-@interface ViewController : UIViewController <MDHorizontalListViewDataSource, MDHorizontalListViewDelegate>
-
-@property (strong, nonatomic) IBOutlet MDHorizontalListView *horizontalView;
-
+@interface ViewController : UIViewController 
 @end
 
