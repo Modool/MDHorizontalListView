@@ -43,6 +43,11 @@
 @property (strong, nonatomic) MDHorizontalListView *horizontalView;
 @property (strong, nonatomic) UIButton *selectButton;
 @property (strong, nonatomic) UIButton *scrollButton;
+@property (strong, nonatomic) UIButton *reloadButton;
+
+@property (strong, nonatomic) UIScrollView *scrollView;
+
+@property (assign, nonatomic) CGFloat width;
 
 @end
 
@@ -51,7 +56,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
-
+    _width = 80;
     _horizontalView = [[MDHorizontalListView alloc] initWithFrame:CGRectMake(0, 0, 300, 60)];
     [self.view addSubview:_horizontalView];
 
@@ -66,6 +71,12 @@
     [_scrollButton setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
     [_scrollButton addTarget:self action:@selector(didClickScrollButton:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:_scrollButton];
+
+    _reloadButton = [[UIButton alloc] initWithFrame:CGRectMake(220, 300, 120, 80)];
+    [_reloadButton setTitle:@"reload" forState:UIControlStateNormal];
+    [_reloadButton setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
+    [_reloadButton addTarget:self action:@selector(didClickReload:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:_reloadButton];
 
     _horizontalView.delegate = self;
     _horizontalView.dataSource = self;
@@ -90,6 +101,12 @@
     [_horizontalView selectIndexProgress:4.5 animated:YES];
 }
 
+- (IBAction)didClickReload:(id)sender {
+    _width = 120;
+    
+    [_horizontalView reloadCellAtIndex:4 animated:YES];
+}
+
 #pragma mark - MDHorizontalListViewDataSource, MDHorizontalListViewDelegate
 
 - (NSInteger)horizontalListViewNumberOfCells:(MDHorizontalListView *)horizontalListView {
@@ -97,6 +114,8 @@
 }
 
 - (CGFloat)horizontalListView:(MDHorizontalListView *)horizontalListView widthForCellAtIndex:(NSInteger)index {
+    if (index == 4) return _width;
+
     return 80;
 }
 

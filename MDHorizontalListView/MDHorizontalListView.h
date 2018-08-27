@@ -142,6 +142,10 @@ UIKIT_EXTERN const CGFloat MDHorizontalListViewIndicatorWidthDynamic;
 /** The index progress for indicator. */
 @property (nonatomic, assign, readonly) CGFloat indexProgress;
 
+- (NSUInteger)indexAtPoint:(CGPoint)point;
+
+- (NSIndexSet *)indexesInRect:(CGRect)rect;
+
 /**
  *  Method to reload the list datasource
  *
@@ -216,5 +220,13 @@ UIKIT_EXTERN const CGFloat MDHorizontalListViewIndicatorWidthDynamic;
  *  @param animated - deselect the cell using animation (the cell it self has to implement the animation)
  */
 - (void)deselectCellAtIndex:(NSInteger)index animated:(BOOL)animated;
+
+/**
+ *  Method to reload a cell at a specific index
+ *
+ *  @param index - the given index to deselect in the datasource
+ *  @param animated - deselect the cell using animation (the cell it self has to implement the animation)
+ */
+- (void)reloadCellAtIndex:(NSInteger)index animated:(BOOL)animated;
 
 @end
