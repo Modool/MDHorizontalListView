@@ -25,6 +25,8 @@ typedef NS_ENUM(NSUInteger, MDHorizontalListViewCellSelectionStyle) {
 
 UIKIT_EXTERN const CGFloat MDHorizontalListViewIndicatorWidthDynamic;
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class MDHorizontalListView;
 
 /**
@@ -230,3 +232,5 @@ UIKIT_EXTERN const CGFloat MDHorizontalListViewIndicatorWidthDynamic;
 - (void)reloadCellAtIndex:(NSInteger)index animated:(BOOL)animated;
 
 @end
+
+NS_ASSUME_NONNULL_END
