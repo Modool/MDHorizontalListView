@@ -12,7 +12,7 @@
 
 @property (nonatomic, strong) UIColor *selectedColor;
 @property (nonatomic, strong) NSString *reusableIdentifier;
-@property (nonatomic, assign) NSInteger index;
+@property (nonatomic, assign) NSUInteger index;
 @property (nonatomic, strong) UITapGestureRecognizer *tapGestureRecognizer;
 
 @property (nonatomic, strong) UIView *selectionView;
