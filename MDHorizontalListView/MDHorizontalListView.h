@@ -11,7 +11,7 @@
 
 /** Scroll position enum type declaration */
 typedef NS_ENUM(NSUInteger, MDHorizontalListViewPosition) {
-    MDHorizontalListViewPositionNone = 0,   /** No specific position */
+    MDHorizontalListViewPositionNone,
     MDHorizontalListViewPositionLeft,       /** Cell alignment from the left side of the list view */
     MDHorizontalListViewPositionRight,      /** Cell alignment from the right side of the list view */
     MDHorizontalListViewPositionCenter,     /** Cell alignment at the center of the list view */
@@ -32,14 +32,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  *  This protocol rapresent the MDHorizontalListView datasource
  *
- *  You MUST implement all the datasource method for the correct behavior of the horizontal list, 
+ *  You MUST implement all the datasource method for the correct behavior of the horizontal list,
  *  none of them are optional.
  */
 @protocol MDHorizontalListViewDataSource <NSObject>
 
 /**
  *  Method to get the number of cells to display in the datasource
- *  
+ *
  *  @param horizontalListView - the MDHorizontalListView asking for the number if cells to diplay
  *
  *  @return NSInteger the number of cells to display
@@ -78,6 +78,16 @@ NS_ASSUME_NONNULL_BEGIN
 @optional
 
 /**
+ *  Method called when a cell will be selected at a specific index
+ *
+ *  @param horizontalListView - the MDHorizontalListView of the selected cell
+ *  @param index - the given index of the selected cell
+ *
+ *  @return BOOL Allow to selected
+ */
+- (BOOL)horizontalListView:(MDHorizontalListView *)horizontalListView shouldSelectCellAtIndex:(NSInteger)index;
+
+/**
  *  Method called when a cell is selected at a specific index
  *
  *  @param horizontalListView - the MDHorizontalListView of the selected cell
@@ -100,7 +110,7 @@ NS_ASSUME_NONNULL_BEGIN
  *
  *  like UITableView, MDHorizontalListView implement cells reusability using an identifier that should be assinged to the same kind of cells
  */
-@interface MDHorizontalListView : UIScrollView <UIScrollViewDelegate, UIGestureRecognizerDelegate> 
+@interface MDHorizontalListView : UIScrollView <UIScrollViewDelegate, UIGestureRecognizerDelegate>
 
 /** The MDHorizontalListViewDelegate is conform to UIScrollView and should be implemented to handle cells selections */
 @property (nonatomic, weak) id<MDHorizontalListViewDelegate> delegate;
@@ -144,8 +154,18 @@ NS_ASSUME_NONNULL_BEGIN
 /** The index progress for indicator. */
 @property (nonatomic, assign, readonly) CGFloat indexProgress;
 
+/**
+ *  Method to map index with point
+ *
+ *  Calling this method to map index from the whole visible cells
+ */
 - (NSUInteger)indexAtPoint:(CGPoint)point;
 
+/**
+ *  Method to map index with point
+ *
+ *  Calling this method to map index from the whole visible cells
+ */
 - (NSIndexSet *)indexesInRect:(CGRect)rect;
 
 /**
@@ -165,13 +185,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (MDHorizontalListViewCell *)dequeueCellWithReusableIdentifier:(NSString *)identifier;
 
 /**
- *  Method to scroll the list to a specific index, 
+ *  Method to scroll the list to a specific index,
  *  calling this method is like call 'scrollToIndex:animated:nearestPosition:' using MDHorizontalListViewPositionNone
  *
  *  @param index - the index of the list to scroll to
  *  @param animated - perform the scrolling using an animatiom
  */
-- (void)scrollToIndex:(NSInteger)index animated:(BOOL)animated;
+- (void)scrollToIndex:(NSUInteger)index animated:(BOOL)animated;
 
 /**
  *  Method to scroll the list to a specific index,
@@ -184,7 +204,7 @@ NS_ASSUME_NONNULL_BEGIN
  *  @discussion this method use UIScrollView 'scrollRectToVisible:animated:', if MDHorizontalListViewPositionNone is used
  *  the nearest position containing the cell frame depending to the scrolling direction.
  */
-- (void)scrollToIndex:(NSInteger)index animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
+- (void)scrollToIndex:(NSUInteger)index animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
 
 /**
  *  Method to select cell for a specific index progress, single selection only.
@@ -207,13 +227,25 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)selectIndexProgress:(CGFloat)progress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
 
 /**
- *  Method to set selected a cell at a specific index 
+ *  Method to select cell for a specific index progress, single selection only.
+ *
+ *  @param progress - the index progress of the list to select
+ *  @param animated - perform the scrolling using an animatiom
+ *  @param position - the nearest position to scroll the list to the cell's view frame
+ *  @param indicatorSynchronously - synchronize indicator progress
+ *
+ *  @discussion this method use UIScrollView 'scrollRectToVisible:animated:', if MDHorizontalListViewPositionNone is used
+ *  the nearest position containing the cell frame depending to the scrolling direction.
+ */
+- (void)selectIndexProgress:(CGFloat)progress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position indicatorSynchronously:(BOOL)indicatorSynchronously;
+
+/**
+ *  Method to set selected a cell at a specific index
  *
  *  @param index - the given index to select in the datasource
  *  @param animated - select the cell using animation (the cell it self has to implement the animation)
  */
-- (void)selectCellAtIndex:(NSInteger)index animated:(BOOL)animated;
-- (void)selectCellAtIndex:(NSInteger)index animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
+- (BOOL)selectCellAtIndex:(NSUInteger)index animated:(BOOL)animated;
 
 /**
  *  Method to set deselected a cell at a specific index
@@ -221,7 +253,7 @@ NS_ASSUME_NONNULL_BEGIN
  *  @param index - the given index to deselect in the datasource
  *  @param animated - deselect the cell using animation (the cell it self has to implement the animation)
  */
-- (void)deselectCellAtIndex:(NSInteger)index animated:(BOOL)animated;
+- (void)deselectCellAtIndex:(NSUInteger)index animated:(BOOL)animated;
 
 /**
  *  Method to reload a cell at a specific index
@@ -229,7 +261,7 @@ NS_ASSUME_NONNULL_BEGIN
  *  @param index - the given index to deselect in the datasource
  *  @param animated - deselect the cell using animation (the cell it self has to implement the animation)
  */
-- (void)reloadCellAtIndex:(NSInteger)index animated:(BOOL)animated;
+- (void)reloadCellAtIndex:(NSUInteger)index animated:(BOOL)animated;
 
 @end
 
