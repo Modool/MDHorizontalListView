@@ -209,27 +209,27 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  *  Method to select cell for a specific index progress, single selection only.
  *
- *  @param progress - the index progress of the list to select
+ *  @param indexProgress - the index progress of the list to select
  *  @param animated - perform the scrolling using an animatiom
  */
-- (void)selectIndexProgress:(CGFloat)progress animated:(BOOL)animated;
+- (void)selectIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated;
 
 /**
  *  Method to select cell for a specific index progress, single selection only.
  *
- *  @param progress - the index progress of the list to select
+ *  @param indexProgress - the index progress of the list to select
  *  @param animated - perform the scrolling using an animatiom
  *  @param position - the nearest position to scroll the list to the cell's view frame
  *
  *  @discussion this method use UIScrollView 'scrollRectToVisible:animated:', if MDHorizontalListViewPositionNone is used
  *  the nearest position containing the cell frame depending to the scrolling direction.
  */
-- (void)selectIndexProgress:(CGFloat)progress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
+- (void)selectIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
 
 /**
  *  Method to select cell for a specific index progress, single selection only.
  *
- *  @param progress - the index progress of the list to select
+ *  @param indexProgress - the index progress of the list to select
  *  @param animated - perform the scrolling using an animatiom
  *  @param position - the nearest position to scroll the list to the cell's view frame
  *  @param indicatorSynchronously - synchronize indicator progress
@@ -237,7 +237,7 @@ NS_ASSUME_NONNULL_BEGIN
  *  @discussion this method use UIScrollView 'scrollRectToVisible:animated:', if MDHorizontalListViewPositionNone is used
  *  the nearest position containing the cell frame depending to the scrolling direction.
  */
-- (void)selectIndexProgress:(CGFloat)progress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position indicatorSynchronously:(BOOL)indicatorSynchronously;
+- (void)selectIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position indicatorSynchronously:(BOOL)indicatorSynchronously;
 
 /**
  *  Method to set selected a cell at a specific index
