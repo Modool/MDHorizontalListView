@@ -10,9 +10,11 @@
 
 @interface MDHorizontalListViewCell ()
 
-@property (nonatomic, strong) UIColor *selectedColor;
-@property (nonatomic, strong) NSString *reusableIdentifier;
+@property (nonatomic, copy) NSString *reusableIdentifier;
+
 @property (nonatomic, assign) NSUInteger index;
+
+@property (nonatomic, strong) UIColor *selectedColor;
 @property (nonatomic, strong) UITapGestureRecognizer *tapGestureRecognizer;
 
 @property (nonatomic, strong) UIView *selectionView;
