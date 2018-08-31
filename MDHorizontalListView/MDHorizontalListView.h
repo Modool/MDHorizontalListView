@@ -143,7 +143,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, getter=isIndicatorEnabled) BOOL indicatorEnabled;
 
 /** background color of indicator, default is 2.f */
-@property (nonatomic, strong) UIColor *indicatorBackgroundColor;
+@property (nonatomic, strong, readonly) CAShapeLayer *indicatorLayer;
+
+/** inset of indicator, default is UIEdgeInsetsZero, nil if indicatorEnabled is NO. */
+@property (nonatomic, assign) UIEdgeInsets indicatorInsets;
 
 /** Height of indicator, default is 2.f */
 @property (nonatomic, assign) CGFloat indicatorHeight;

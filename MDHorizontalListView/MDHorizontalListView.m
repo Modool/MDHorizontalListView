@@ -39,8 +39,9 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     NSMutableIndexSet *_highlightedIndexes;
 
     NSUInteger _numberOfCells;
-    CALayer *_indicatorLayer;
 
+    UIView *_contentView;
+    CAShapeLayer *_indicatorLayer;
     BOOL _loaded;
     BOOL _layoutEver;
 }
@@ -86,6 +87,9 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 
     _indicatorHeight = 2.f;
     _indicatorWidth = MDHorizontalListViewIndicatorWidthDynamic;
+
+    _contentView = [[UIView alloc] initWithFrame:CGRectZero];
+    [self addSubview:_contentView];
 }
 
 - (void)layoutSubviews {
@@ -100,6 +104,8 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
         [self _updateVisibleCells];
     }
     [self _updateIndicator];
+
+    _contentView.frame = (CGRect){0, 0, self.contentSize};
 }
 
 #pragma mark - accessor
@@ -158,14 +164,18 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     [_lock unlock];
 }
 
-- (void)setIndicatorBackgroundColor:(UIColor *)indicatorBackgroundColor {
-    [_lock lock];
-    if (_indicatorBackgroundColor != indicatorBackgroundColor) {
-        _indicatorBackgroundColor = indicatorBackgroundColor;
-
-        _indicatorLayer.backgroundColor = [indicatorBackgroundColor CGColor];
+- (CAShapeLayer *)indicatorLayer {
+    if (!_indicatorEnabled) return nil;
+    if (!_indicatorLayer) {
+        _indicatorLayer = [CAShapeLayer layer];
     }
-    [_lock unlock];
+    return _indicatorLayer;
+}
+
+- (void)setIndicatorInsets:(UIEdgeInsets)indicatorInsets {
+    _indicatorInsets = indicatorInsets;
+
+    [self _updateIndicator];
 }
 
 - (void)setIndicatorHeight:(CGFloat)indicatorHeight {
@@ -320,17 +330,13 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 
 - (void)_removeIndicator {
     if (_indicatorLayer) [_indicatorLayer removeFromSuperlayer];
-    _indicatorLayer = nil;
 }
 
 - (void)_loadIndicatorIfNeeds {
     if (!_indicatorEnabled) return;
-    if (_indicatorLayer) return;
+    if (_indicatorLayer.superlayer) return;
 
-    _indicatorLayer = [CALayer layer];
-    _indicatorLayer.backgroundColor = _indicatorBackgroundColor.CGColor;
-
-    [self.layer addSublayer:_indicatorLayer];
+    [_contentView.layer addSublayer:self.indicatorLayer];
 }
 
 - (void)_updateIndicator {
@@ -356,6 +362,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     CGFloat height = _indicatorHeight;
     CGFloat width = _indicatorWidth != MDHorizontalListViewIndicatorWidthDynamic ? _indicatorWidth : frame.size.width;
     frame = CGRectMake(CGRectGetMinX(frame) - (CGRectGetWidth(frame) - width) / 2, CGRectGetHeight(self.bounds) - height, width, height);
+    frame = UIEdgeInsetsInsetRect(frame, _indicatorInsets);
 
     _indicatorLayer.frame = frame;
 }
@@ -380,7 +387,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     cell.tapGestureRecognizer = tapGestureRecognizer;
     [cell addGestureRecognizer:tapGestureRecognizer];
 
-    [self insertSubview:cell atIndex:0];
+    [self insertSubview:cell aboveSubview:_contentView];
 
     return cell;
 }
