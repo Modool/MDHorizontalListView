@@ -172,8 +172,8 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     return _indicatorLayer;
 }
 
-- (void)setIndicatorInsets:(UIEdgeInsets)indicatorInsets {
-    _indicatorInsets = indicatorInsets;
+- (void)setIndicatorInset:(UIEdgeInsets)indicatorInset {
+    _indicatorInset = indicatorInset;
 
     [self _updateIndicator];
 }
@@ -362,7 +362,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     CGFloat height = _indicatorHeight;
     CGFloat width = _indicatorWidth != MDHorizontalListViewIndicatorWidthDynamic ? _indicatorWidth : frame.size.width;
     frame = CGRectMake(CGRectGetMinX(frame) - (CGRectGetWidth(frame) - width) / 2, CGRectGetHeight(self.bounds) - height, width, height);
-    frame = UIEdgeInsetsInsetRect(frame, _indicatorInsets);
+    frame = UIEdgeInsetsInsetRect(frame, _indicatorInset);
 
     _indicatorLayer.frame = frame;
 }
