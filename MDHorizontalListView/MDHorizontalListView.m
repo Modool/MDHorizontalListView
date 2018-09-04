@@ -95,20 +95,16 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 - (void)layoutSubviews {
     [super layoutSubviews];
 
-    _layoutEver = YES;
-
-    if (!_loaded || _numberOfCells != [self _numberOfCell]) {
-        [self _reloadData];
-    } else {
-        [self _updateCellsHeight];
-        [self _updateVisibleCells];
-    }
-    [self _updateIndicator];
-
-    _contentView.frame = (CGRect){0, 0, self.contentSize};
+    [self _layoutSubviews];
 }
 
 #pragma mark - accessor
+
+- (void)setFrame:(CGRect)frame {
+    [super setFrame:frame];
+
+    [self _layoutSubviews];
+}
 
 - (NSIndexSet *)selectedIndexes {
     NSIndexSet *indexes = nil;
@@ -294,6 +290,20 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 
 #pragma mark - private
 
+- (void)_layoutSubviews {
+    _layoutEver = YES;
+
+    if (!_loaded || _numberOfCells != [self _numberOfCell]) {
+        [self _reloadData];
+    } else {
+        [self _updateCellsHeight];
+        [self _updateVisibleCells];
+    }
+    [self _updateIndicator];
+
+    _contentView.frame = (CGRect){0, 0, self.contentSize};
+}
+
 - (void)_reloadData {
     // clean up old cells
     for (UIView *view in [_visibleCells allValues]) {
@@ -324,8 +334,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     [self _updateVisibleCells];
 
     if (!_allowsNoneSelection && _cellFrames.count) [self selectCellAtIndex:0 animated:YES];
-
-    _loaded = YES;
+    if (_numberOfCells) _loaded = YES;
 }
 
 - (void)_removeIndicator {
@@ -395,15 +404,13 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 - (NSIndexSet *)_visibleIndexes {
     NSMutableIndexSet *visibleIndexes = [NSMutableIndexSet indexSet];
     CGRect visibleRect = [self _visibleRect];
-    BOOL canBreak = NO;  // for a shorter loop... after the first match the next fail mean no more visible cells
     for (int i = 0; i < [_cellFrames count]; i++) {
         NSString *frameString = _cellFrames[i];
         CGRect cellDestinationFrame = CGRectFromString(frameString);
 
         if (CGRectIntersectsRect(visibleRect, cellDestinationFrame)) {
-            canBreak = YES;
             [visibleIndexes addIndex:i];
-        } else if (canBreak) {
+        } else if (visibleIndexes.count) {
             break;
         }
     }
@@ -443,6 +450,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
         _visibleCells[frameString] = newCell;
         [self _transitFromCell:cell toCell:newCell animted:animated];
     }
+    cell.selected = [_selectedIndexes containsIndex:index];
 
     if (offset == 0) return;
     for (NSUInteger i = index + 1; i < _numberOfCells; i++) {
@@ -454,6 +462,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     }
     if (!animated) {
         [self _updateVisibleCells];
+        [self _updateIndicator];
     } else {
         [UIView animateWithDuration:MDHorizontalListViewAnimatedDuration
                          animations:^{
@@ -560,7 +569,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     [cell removeFromSuperview];
     [cell removeGestureRecognizer:cell.tapGestureRecognizer];
 
-    cell.index = -1;
+    cell.index = NSNotFound;
 
     [_visibleCells removeObjectForKey:frameKey];
 }
@@ -693,7 +702,6 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 
     [self _updateIndexProgress];
     [self _reloadAtIndex:index animated:animated];
-    [self _updateIndicator];
 }
 
 - (void)_highlightCellAtIndex:(NSUInteger)index animated:(BOOL)animated {
@@ -749,6 +757,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     BOOL select = !cell.selected;
     if (select) {
         BOOL selected = [self selectCellAtIndex:cell.index animated:YES];
+
         if (selected && [self.delegate respondsToSelector:@selector(horizontalListView:didSelectCellAtIndex:)]) {
             [self.delegate horizontalListView:self didSelectCellAtIndex:cell.index];
         }
