@@ -333,7 +333,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     // add the visible cells
     [self _updateVisibleCells];
 
-    if (!_allowsNoneSelection && _cellFrames.count) [self selectCellAtIndex:0 animated:YES];
+    if (!_allowsNoneSelection && _cellFrames.count && _selectedIndexes.count) [self selectCellAtIndex:_selectedIndexes.firstIndex animated:YES];
     if (_numberOfCells) _loaded = YES;
 }
 
