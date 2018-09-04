@@ -135,7 +135,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     if (_cellSpacing != cellSpacing) {
         _cellSpacing = cellSpacing;
 
-        [self reloadData];
+        [self _updateSpacing];
     }
     [_lock unlock];
 }
@@ -304,6 +304,24 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     _contentView.frame = (CGRect){0, 0, self.contentSize};
 }
 
+- (void)_updateSpacing {
+    CGFloat contentWidth = 0.0;
+    for (NSUInteger i = 0; i < _numberOfCells; i++) {
+        NSString *frameString = _cellFrames[i];
+        CGRect cellFrame = CGRectFromString(frameString);
+        CGFloat cellWidth = CGRectGetWidth(cellFrame);
+        CGRect cellDestinationFrame = CGRectMake(contentWidth, 0.0, cellWidth, self.frame.size.height);
+
+        contentWidth += cellWidth;
+        contentWidth += ((_numberOfCells > 1 && i < _numberOfCells - 1) ? _cellSpacing : 0.0);
+
+        _cellFrames[i] = NSStringFromCGRect(cellDestinationFrame);
+    }
+    self.contentSize = CGSizeMake(contentWidth, self.frame.size.height);
+    
+    [self _updateVisibleCells];
+}
+
 - (void)_reloadData {
     // clean up old cells
     for (UIView *view in [_visibleCells allValues]) {
@@ -434,31 +452,30 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     CGFloat offset = width - CGRectGetWidth(frame);
 
     frame.size.width = width;
-    NSString *newFrameString = NSStringFromCGRect(frame);
-    _cellFrames[index] = newFrameString;
+    _cellFrames[index] = NSStringFromCGRect(frame);
 
-    CGSize contentSize = self.contentSize;
-    contentSize.width += offset;
+    if (offset != 0) {
+        for (NSUInteger i = index + 1; i < _numberOfCells; i++) {
+            CGRect frame = CGRectFromString(_cellFrames[i]);
+            frame.origin.x += offset;
+            NSString *frameString = NSStringFromCGRect(frame);
 
-    self.contentSize = contentSize;
+            _cellFrames[i] = frameString;
+        }
+        CGSize contentSize = self.contentSize;
+        contentSize.width += offset;
+
+        self.contentSize = contentSize;
+    }
 
     MDHorizontalListViewCell *cell = _visibleCells[frameString];
     if (cell) {
-        MDHorizontalListViewCell *newCell = [_dataSource horizontalListView:self cellAtIndex:index];
-        newCell.frame = CGRectFromString(newFrameString);
+        [_visibleCells removeObjectForKey:frameString];
 
-        _visibleCells[frameString] = newCell;
+        MDHorizontalListViewCell *newCell = [self _loadCellAtIndex:index];
+        newCell.selected = cell.selected;
+
         [self _transitFromCell:cell toCell:newCell animted:animated];
-    }
-    cell.selected = [_selectedIndexes containsIndex:index];
-
-    if (offset == 0) return;
-    for (NSUInteger i = index + 1; i < _numberOfCells; i++) {
-        CGRect frame = CGRectFromString(_cellFrames[i]);
-        frame.origin.x += offset;
-        NSString *frameString = NSStringFromCGRect(frame);
-
-        _cellFrames[i] = frameString;
     }
     if (!animated) {
         [self _updateVisibleCells];
@@ -474,7 +491,6 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 }
 
 - (void)_transitFromCell:(MDHorizontalListViewCell *)fromCell toCell:(MDHorizontalListViewCell *)toCell animted:(BOOL)animated{
-    [self insertSubview:toCell aboveSubview:fromCell];
     if (!animated) {
         [fromCell removeFromSuperview];
     } else {
