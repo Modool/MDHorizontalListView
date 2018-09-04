@@ -113,10 +113,10 @@ NS_ASSUME_NONNULL_BEGIN
 @interface MDHorizontalListView : UIScrollView <UIScrollViewDelegate, UIGestureRecognizerDelegate>
 
 /** The MDHorizontalListViewDelegate is conform to UIScrollView and should be implemented to handle cells selections */
-@property (nonatomic, weak) id<MDHorizontalListViewDelegate> delegate;
+@property (nonatomic, weak, nullable) id<MDHorizontalListViewDelegate> delegate;
 
 /** The list datasource MUST be implemented to populate the list */
-@property (nonatomic, weak) id<MDHorizontalListViewDataSource> dataSource;
+@property (nonatomic, weak, nullable) id<MDHorizontalListViewDataSource> dataSource;
 
 /** Style for selected cell */
 @property (nonatomic, assign) MDHorizontalListViewCellSelectionStyle selectionStyle;
@@ -143,7 +143,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, getter=isIndicatorEnabled) BOOL indicatorEnabled;
 
 /** background color of indicator, default is 2.f */
-@property (nonatomic, strong, readonly) CAShapeLayer *indicatorLayer;
+@property (nonatomic, strong, readonly, nullable) CAShapeLayer *indicatorLayer;
 
 /** inset of indicator, default is UIEdgeInsetsZero, nil if indicatorEnabled is NO. */
 @property (nonatomic, assign) UIEdgeInsets indicatorInset;
@@ -185,7 +185,7 @@ NS_ASSUME_NONNULL_BEGIN
  *  Use this method to implement the cells reusability to save memory, each kind of cell should have is own identifier
  *  if an enqueued cell is dequeued can be reused to be displayed at a different index rather than allocate a new cell
  */
-- (MDHorizontalListViewCell *)dequeueCellWithReusableIdentifier:(NSString *)identifier;
+- (MDHorizontalListViewCell *_Nullable)dequeueCellWithReusableIdentifier:(NSString *)identifier;
 
 /**
  *  Method to scroll the list to a specific index,

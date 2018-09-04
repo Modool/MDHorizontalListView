@@ -39,11 +39,11 @@
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
-    return [self initWithReuseIdentifier:nil];
+    return [self initWithReuseIdentifier:NSStringFromClass([self class])];
 }
 
 - (instancetype)initWithCoder:(NSCoder *)aDecoder {
-    return [self initWithReuseIdentifier:nil];
+    return [self initWithReuseIdentifier:NSStringFromClass([self class])];
 }
 
 - (void)dealloc {
