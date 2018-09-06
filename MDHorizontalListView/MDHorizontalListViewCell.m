@@ -25,7 +25,7 @@
 
 - (instancetype)initWithReuseIdentifier:(NSString *)reuseIdentifier {
     NSParameterAssert([reuseIdentifier length]);
-    
+
     if (self = [super initWithFrame:CGRectZero]) {
         _reusableIdentifier = reuseIdentifier;
         _contentView = [[UIView alloc] init];
@@ -101,9 +101,10 @@
     _selectionView.backgroundColor = enabled ? [self selectedColor] : nil;
     if (!animated || ![self selectedColor]) return;
 
-    _selectionView.alpha = 0.f;
+    UIView *selectionView = _selectionView;
+    selectionView.alpha = 0.f;
     [UIView animateWithDuration:0.3 animations:^{
-        self.selectionView.alpha = 1.f;
+        selectionView.alpha = 1.f;
     }];
 }
 
