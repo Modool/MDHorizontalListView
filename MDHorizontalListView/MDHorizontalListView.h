@@ -2,7 +2,7 @@
 //  MDHorizontalListView.h
 //  MDHorizontalListView
 //
-//  Created by Jave on 2018/8/24.
+//  Created by xulinfeng on 2018/8/24.
 //  Copyright © 2018年 markejave. All rights reserved.
 //
 
@@ -133,6 +133,9 @@ NS_ASSUME_NONNULL_BEGIN
 /** The index of selected cell. */
 @property (nonatomic, assign, readonly) NSUInteger selectedIndex;
 
+/** Ability of highlight state, it's unavailabel if NO. */
+@property (nonatomic, assign) BOOL highlightEnabled;
+
 /** The hightlighted indexes of cells. */
 @property (nonatomic, copy, readonly) NSIndexSet *highlightedIndexes;
 
@@ -143,7 +146,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, getter=isIndicatorEnabled) BOOL indicatorEnabled;
 
 /** background color of indicator, default is 2.f */
-@property (nonatomic, strong, readonly, nullable) CAShapeLayer *indicatorLayer;
+@property (nonatomic, strong, readonly, nullable) UIView *indicatorView;
 
 /** inset of indicator, default is UIEdgeInsetsZero, nil if indicatorEnabled is NO. */
 @property (nonatomic, assign) UIEdgeInsets indicatorInset;
@@ -154,8 +157,56 @@ NS_ASSUME_NONNULL_BEGIN
 /** Width of indicator, default is dynamic */
 @property (nonatomic, assign) CGFloat indicatorWidth;
 
+/** To update index progress while index updating.*/
+@property (nonatomic, assign) BOOL indexProgressSynchronous;
+
 /** The index progress for indicator. */
-@property (nonatomic, assign, readonly) CGFloat indexProgress;
+@property (nonatomic, assign) CGFloat indexProgress;
+
+/**
+ *  Method to update index progress, single selection only.
+ *
+ *  @param indexProgress - the index progress of the list to select
+ *  @param animated - perform the scrolling using an animatiom
+ *
+ *  the nearest position containing the cell frame depending to the scrolling direction.
+ */
+- (void)setIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated;
+
+/**
+ *  Method to update index progress, single selection only.
+ *
+ *  @param indexProgress - the index progress of the list to select
+ *  @param animated - perform the scrolling using an animatiom
+ *  @param position - the nearest position to scroll the list to the cell's view frame
+ *
+ *  @discussion this method use UIScrollView 'scrollRectToVisible:animated:', if MDHorizontalListViewPositionNone is used
+ *  the nearest position containing the cell frame depending to the scrolling direction.
+ */
+- (void)setIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
+
+/**
+ *  Method to scroll with index progress.
+ *
+ *  @param indexProgress - the index progress of the list to select
+ *  @param animated - perform the scrolling using an animatiom
+ *
+ *  @discussion this method use UIScrollView 'scrollRectToVisible:animated:', if MDHorizontalListViewPositionNone is used
+ *  the nearest position containing the cell frame depending to the scrolling direction.
+ */
+- (void)scrollToIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated;
+
+/**
+ *  Method to scroll with index progress.
+ *
+ *  @param indexProgress - the index progress of the list to select
+ *  @param animated - perform the scrolling using an animatiom
+ *  @param position - the nearest position to scroll the list to the cell's view frame
+ *
+ *  @discussion this method use UIScrollView 'scrollRectToVisible:animated:', if MDHorizontalListViewPositionNone is used
+ *  the nearest position containing the cell frame depending to the scrolling direction.
+ */
+- (void)scrollToIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
 
 /**
  *  Method to map index with point
@@ -208,39 +259,6 @@ NS_ASSUME_NONNULL_BEGIN
  *  the nearest position containing the cell frame depending to the scrolling direction.
  */
 - (void)scrollToIndex:(NSUInteger)index animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
-
-/**
- *  Method to select cell for a specific index progress, single selection only.
- *
- *  @param indexProgress - the index progress of the list to select
- *  @param animated - perform the scrolling using an animatiom
- */
-- (void)selectIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated;
-
-/**
- *  Method to select cell for a specific index progress, single selection only.
- *
- *  @param indexProgress - the index progress of the list to select
- *  @param animated - perform the scrolling using an animatiom
- *  @param position - the nearest position to scroll the list to the cell's view frame
- *
- *  @discussion this method use UIScrollView 'scrollRectToVisible:animated:', if MDHorizontalListViewPositionNone is used
- *  the nearest position containing the cell frame depending to the scrolling direction.
- */
-- (void)selectIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position;
-
-/**
- *  Method to select cell for a specific index progress, single selection only.
- *
- *  @param indexProgress - the index progress of the list to select
- *  @param animated - perform the scrolling using an animatiom
- *  @param position - the nearest position to scroll the list to the cell's view frame
- *  @param indicatorSynchronously - synchronize indicator progress
- *
- *  @discussion this method use UIScrollView 'scrollRectToVisible:animated:', if MDHorizontalListViewPositionNone is used
- *  the nearest position containing the cell frame depending to the scrolling direction.
- */
-- (void)selectIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position indicatorSynchronously:(BOOL)indicatorSynchronously;
 
 /**
  *  Method to set selected a cell at a specific index

@@ -41,7 +41,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     NSUInteger _numberOfCells;
     
     UIView *_contentView;
-    CAShapeLayer *_indicatorLayer;
+    UIView *_indicatorView;
     BOOL _loaded;
     BOOL _layoutEver;
 }
@@ -81,10 +81,13 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     
     _selectedIndexes = [NSMutableIndexSet indexSet];
     _highlightedIndexes = [NSMutableIndexSet indexSet];
-    
+
+    _highlightEnabled = YES;
     _allowsNoneSelection = YES;
     _allowsMultipleSelection = YES;
-    
+
+    _indexProgressSynchronous = YES;
+
     _indicatorHeight = 2.f;
     _indicatorWidth = MDHorizontalListViewIndicatorWidthDynamic;
     
@@ -102,8 +105,8 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 
 - (void)setFrame:(CGRect)frame {
     [super setFrame:frame];
-    
-    [self _layoutSubviews];
+
+    [self setNeedsLayout];
 }
 
 - (NSIndexSet *)selectedIndexes {
@@ -160,18 +163,19 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     [_lock unlock];
 }
 
-- (CAShapeLayer *)indicatorLayer {
+- (UIView *)indicatorView {
     if (!_indicatorEnabled) return nil;
-    if (!_indicatorLayer) {
-        _indicatorLayer = [CAShapeLayer layer];
+
+    if (!_indicatorView) {
+        _indicatorView = [[UIView alloc] init];
     }
-    return _indicatorLayer;
+    return _indicatorView;
 }
 
 - (void)setIndicatorInset:(UIEdgeInsets)indicatorInset {
     _indicatorInset = indicatorInset;
     
-    [self _updateIndicator];
+    [self _updateIndicatorAnimated:NO];
 }
 
 - (void)setIndicatorHeight:(CGFloat)indicatorHeight {
@@ -179,7 +183,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     if (_indicatorHeight != indicatorHeight) {
         _indicatorHeight = indicatorHeight;
         
-        [self _updateIndicator];
+        [self _updateIndicatorAnimated:NO];
     }
     [_lock unlock];
 }
@@ -189,7 +193,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     if (_indicatorWidth != indicatorWidth) {
         _indicatorWidth = indicatorWidth;
         
-        [self _updateIndicator];
+        [self _updateIndicatorAnimated:NO];
     }
     [_lock unlock];
 }
@@ -225,7 +229,11 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 
 - (void)reloadData {
     [_lock lock];
-    if (_layoutEver) [self _reloadData];
+    if (_layoutEver) {
+        [self _reloadData];
+    } else {
+        [self layoutIfNeeded];
+    }
     [_lock unlock];
 }
 
@@ -250,18 +258,23 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     [_lock unlock];
 }
 
-- (void)selectIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated {
-    [self selectIndexProgress:indexProgress animated:animated nearestPosition:MDHorizontalListViewPositionNone];
+- (void)setIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated {
+    [self setIndexProgress:indexProgress animated:animated nearestPosition:MDHorizontalListViewPositionNone];
 }
 
-- (void)selectIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position {
-    [self selectIndexProgress:indexProgress animated:animated nearestPosition:position indicatorSynchronously:YES];
-}
-
-- (void)selectIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position indicatorSynchronously:(BOOL)indicatorSynchronously {
+- (void)setIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position {
     [_lock lock];
-    [self _selectIndexProgress:indexProgress animated:animated nearestPosition:position];
-    if (indicatorSynchronously) [self _updateIndicator];
+    [self _setIndexProgress:indexProgress animated:animated nearestPosition:position];
+    [_lock unlock];
+}
+
+- (void)scrollToIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated {
+    [self scrollToIndexProgress:indexProgress animated:animated nearestPosition:MDHorizontalListViewPositionNone];
+}
+
+- (void)scrollToIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position {
+    [_lock lock];
+    [self _scrollToIndexProgress:indexProgress animated:animated nearestPosition:position];
     [_lock unlock];
 }
 
@@ -277,7 +290,6 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     [_lock lock];
     if (_selectedIndexes.count > 1 || _allowsNoneSelection) {
         [self _deselectCellAtIndex:index animated:animated];
-        [self _updateIndicator];
     }
     [_lock unlock];
 }
@@ -292,7 +304,6 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 
 - (void)_layoutSubviews {
     _contentView.frame = (CGRect){0, 0, self.contentSize};
-    
     _layoutEver = YES;
     
     if (!_loaded || _numberOfCells != [self _numberOfCell]) {
@@ -301,7 +312,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
         [self _updateCellsHeight];
         [self _updateVisibleCells];
     }
-    [self _updateIndicator];
+    [self _updateIndicatorAnimated:NO];
 }
 
 - (void)_updateSpacing {
@@ -320,7 +331,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     self.contentSize = CGSizeMake(contentWidth, self.frame.size.height);
     
     [self _updateVisibleCells];
-    [self _updateIndicator];
+    [self _updateIndicatorAnimated:NO];
 }
 
 - (void)_reloadData {
@@ -351,29 +362,35 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     self.contentSize = CGSizeMake(contentWidth, self.frame.size.height);
     // add the visible cells
     [self _updateVisibleCells];
+    [self _updateIndicatorAnimated:NO];
     
     if (!_allowsNoneSelection && _cellFrames.count && _selectedIndexes.count) [self selectCellAtIndex:_selectedIndexes.firstIndex animated:YES];
     if (_numberOfCells) _loaded = YES;
 }
 
 - (void)_removeIndicator {
-    if (_indicatorLayer) [_indicatorLayer removeFromSuperlayer];
+    if (_indicatorView) [_indicatorView removeFromSuperview];
 }
 
 - (void)_loadIndicatorIfNeeds {
     if (!_indicatorEnabled) return;
-    if (_indicatorLayer.superlayer) return;
+
+    UIView *indictator = _indicatorView;
+    if (indictator.superview) return;
     
-    [_contentView.layer addSublayer:self.indicatorLayer];
+    [_contentView addSubview:indictator];
 }
 
-- (void)_updateIndicator {
+- (void)_updateIndicatorAnimated:(BOOL)animated {
+    [self _updateIndicatorAtIndexProgress:_indexProgress animated:animated];
+}
+
+- (void)_updateIndicatorAtIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated {
     [self _loadIndicatorIfNeeds];
-    
-    _indicatorLayer.hidden = [_selectedIndexes count] <= 0;
+
+    self.indicatorView.hidden = [_selectedIndexes count] <= 0;
     if (![_selectedIndexes count]) return;
-    
-    CGFloat indexProgress = _indexProgress;
+
     NSUInteger index = floor(indexProgress);
     NSUInteger nextIndex = index + 1;
     
@@ -390,10 +407,16 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     BOOL dynamic = _indicatorWidth != MDHorizontalListViewIndicatorWidthDynamic;
     CGFloat height = _indicatorHeight;
     CGFloat width = dynamic ? _indicatorWidth : frame.size.width;
-    frame = CGRectMake(CGRectGetMinX(frame) - (CGRectGetWidth(frame) - width) / 2, CGRectGetHeight(self.bounds) - height, width, height);
+    frame = CGRectMake(CGRectGetMinX(frame) + (CGRectGetWidth(frame) - width) / 2, CGRectGetHeight(self.bounds) - height, width, height);
     frame = UIEdgeInsetsInsetRect(frame, _indicatorInset);
-    
-    _indicatorLayer.frame = frame;
+
+    if (animated) {
+        [UIView animateWithDuration:MDHorizontalListViewAnimatedDuration animations:^{
+            self.indicatorView.frame = frame;
+        }];
+    } else {
+        self.indicatorView.frame = frame;
+    }
 }
 
 - (NSUInteger)_numberOfCell {
@@ -405,8 +428,9 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     NSAssert(cell != nil, @"Cell can not be nil.");
     
     cell.index = index;
+    cell.selected = [_selectedIndexes containsIndex:index];
     cell.selectedColor = [self _selectionColor];
-    
+
     NSString *frameString = _cellFrames[index];
     [_visibleCells setObject:cell forKey:frameString];
     
@@ -479,17 +503,14 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
         
         [self _transitFromCell:cell toCell:newCell animted:animated];
     }
-    if (!animated) {
-        [self _updateVisibleCells];
-        [self _updateIndicator];
+    if (animated) {
+        [UIView animateWithDuration:MDHorizontalListViewAnimatedDuration animations:^{
+            [self _updateVisibleCells];
+        }];
     } else {
-        [UIView animateWithDuration:MDHorizontalListViewAnimatedDuration
-                         animations:^{
-                             [self _updateVisibleCells];
-                         } completion:^(BOOL finished) {
-                             [self _updateIndicator];
-                         }];
+        [self _updateVisibleCells];
     }
+    [self _updateIndicatorAnimated:animated];
 }
 
 - (void)_transitFromCell:(MDHorizontalListViewCell *)fromCell toCell:(MDHorizontalListViewCell *)toCell animted:(BOOL)animated{
@@ -546,7 +567,7 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
         
         // handle selection
         BOOL selected = [selectedIndexes containsIndex:index];
-        [cell setSelected:selected animated:NO];
+        if (cell.selected != selected) [cell setSelected:selected animated:NO];
     }];
     // enqueue unused cells
     for (NSString *unusedCellKey in nonVisibleCellKeys) {
@@ -555,8 +576,8 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
         [self _enqueueCell:cell forKey:unusedCellKey];
     }
     
-    if (_indexProgress >= 0 && _indexProgress < _cellFrames.count) {
-        [self _updateSelectIndexProgress:_indexProgress animated:NO];
+    if (_indexProgress >= 0 && _indexProgress < _cellFrames.count && _indexProgressSynchronous) {
+        [self _setIndexProgress:_indexProgress animated:NO];
     }
 }
 
@@ -606,78 +627,90 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     return cell;
 }
 
-- (void)_selectIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position {
+- (void)_setIndexProgress:(CGFloat)indexProgress {
+    [self _setIndexProgress:indexProgress animated:NO];
+}
+
+- (void)_setIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated {
+    [self _setIndexProgress:indexProgress animated:animated nearestPosition:MDHorizontalListViewPositionNone];
+}
+
+- (void)_setIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position {
     if (_allowsMultipleSelection || !_selectedIndexes.count) return;
     if (indexProgress < 0 || indexProgress >= _numberOfCells) return;
-    
-    [self _updateSelectIndexProgress:indexProgress animated:animated];
+
+    [self _updateVisibleCellsProgressWithIndexProgress:indexProgress animated:animated];
+    [self _updateIndicatorAtIndexProgress:indexProgress animated:animated];
+
+    _indexProgress = indexProgress;
     
     if (position == MDHorizontalListViewPositionNone) return;
-    
     [self _scrollToIndexProgress:indexProgress animated:animated nearestPosition:position];
 }
 
 - (void)_scrollToIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated nearestPosition:(MDHorizontalListViewPosition)position {
     if (position == MDHorizontalListViewPositionNone) return;
-    
+
     NSUInteger index = floor(indexProgress);
     if (index >= _numberOfCells) return;
-    
-    CGRect rect = CGRectFromString(_cellFrames[index]);
-    CGFloat offsetX = rect.origin.x;
+
+    CGFloat width = self.frame.size.width;
     CGSize contentSize = self.contentSize;
     UIEdgeInsets contentInset = self.contentInset;
-    
-    CGFloat width = self.frame.size.width;
-    
+
+    CGFloat contentWidth = contentSize.width + contentInset.left + contentInset.right;
+    if (contentWidth <= width) return;
+
+    CGRect rect = CGRectFromString(_cellFrames[index]);
+    CGFloat offsetX = rect.origin.x;
     switch (position) {
         case MDHorizontalListViewPositionLeft: offsetX = CGRectGetMinX(rect) - contentInset.left; break;
         case MDHorizontalListViewPositionRight: offsetX = CGRectGetMaxX(rect) - width + contentInset.right; break;
         case MDHorizontalListViewPositionCenter: {
-            CGFloat centerX = rect.origin.x + rect.size.width / 2.;
-            CGFloat progress = indexProgress - index;
-            NSUInteger nextIndex = ceil(indexProgress);
-            
-            CGFloat detla = 0;
-            if (nextIndex != index && nextIndex < _numberOfCells) {
-                CGRect nextRect = CGRectFromString(_cellFrames[nextIndex]);
-                CGFloat nextCenterX = nextRect.origin.x + nextRect.size.width / 2.;
-                detla = (nextCenterX - centerX) * progress;
+            CGFloat contentWidth = contentSize.width + contentInset.left + contentInset.right;
+            if (contentWidth <= width) {
+                offsetX = -contentInset.left;
+            } else {
+                CGFloat centerX = rect.origin.x + rect.size.width / 2.;
+                CGFloat progress = indexProgress - index;
+                NSUInteger nextIndex = ceil(indexProgress);
+
+                CGFloat detla = 0;
+                if (nextIndex != index && nextIndex < _numberOfCells) {
+                    CGRect nextRect = CGRectFromString(_cellFrames[nextIndex]);
+                    CGFloat nextCenterX = nextRect.origin.x + nextRect.size.width / 2.;
+                    detla = (nextCenterX - centerX) * progress;
+                }
+                offsetX = centerX + detla - width / 2.;
             }
-            offsetX = centerX + detla - width / 2.;
         } break;
         default: break;
     }
-    
+
     offsetX = MAX(offsetX, -self.contentInset.left);
     offsetX = MIN(offsetX, contentInset.right + contentSize.width - width);
-    
+
     [self setContentOffset:CGPointMake(offsetX, 0) animated:animated];
 }
 
-- (void)_updateSelectIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated {
-    if (indexProgress < 0 || indexProgress >= _numberOfCells) return;
-    
+- (void)_updateVisibleCellsProgressWithIndexProgress:(CGFloat)indexProgress animated:(BOOL)animated {
     [_visibleCells enumerateKeysAndObjectsUsingBlock:^(NSString *key, MDHorizontalListViewCell *cell, BOOL *stop) {
-        [self _selectIndexProgress:indexProgress forCell:cell animated:animated];
+        [self _willSelectAtIndexProgress:indexProgress forCell:cell animated:animated];
     }];
-    
-    _indexProgress = indexProgress;
 }
 
-- (void)_selectIndexProgress:(CGFloat)indexProgress forCell:(MDHorizontalListViewCell *)cell animated:(BOOL)animated {
+- (void)_willSelectAtIndexProgress:(CGFloat)indexProgress forCell:(MDHorizontalListViewCell *)cell animated:(BOOL)animated {
     if (indexProgress < 0 || indexProgress >= _numberOfCells) return;
     
     NSUInteger index = cell.index;
-    BOOL selected = cell.selected;
-    
+
     CGFloat progress = fabs(index - indexProgress);
-    progress = progress > 1 ? selected : (1 - progress);
+    progress = progress > 1 ? 0 : (1 - progress);
     
     progress = MAX(0, progress);
     progress = MIN(1, progress);
     
-    [cell setSelectedProgress:progress animated:animated];
+    [cell willSelectAtProgress:progress animated:animated];
 }
 
 - (BOOL)_selectCellAtIndex:(NSUInteger)index animated:(BOOL)animated {
@@ -694,14 +727,11 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
         NSString *frameString = _cellFrames[index];
         MDHorizontalListViewCell *cell = _visibleCells[frameString];
         
-        if (cell) [cell setSelected:YES animated:animated];
+        if (cell && !cell.selected) [cell setSelected:YES animated:animated];
+        if (_indexProgressSynchronous) [self setIndexProgress:index animated:animated];
     }
-    
-    [self _updateIndexProgress];
-    [self _updateIndicator];
-    
+
     return allowed;
-    
 }
 
 - (void)_deselectCellAtIndex:(NSUInteger)index animated:(BOOL)animated {
@@ -712,18 +742,19 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
     NSString *frameString = _cellFrames[index];
     MDHorizontalListViewCell *cell = _visibleCells[frameString];
     
-    if (cell) [cell setSelected:NO animated:animated];
+    if (cell && cell.selected) [cell setSelected:NO animated:animated];
+    if (_indexProgressSynchronous) [self _setIndexProgress:_selectedIndexes.firstIndex animated:animated];
 }
 
 - (void)_reloadCellAtIndex:(NSUInteger)index animated:(BOOL)animated {
     if (index >= _numberOfCells) return;
-    
-    [self _updateIndexProgress];
+
     [self _reloadAtIndex:index animated:animated];
+    if (_indexProgressSynchronous) [self _setIndexProgress:_selectedIndexes.firstIndex animated:animated];
 }
 
 - (void)_highlightCellAtIndex:(NSUInteger)index animated:(BOOL)animated {
-    if (index >= _numberOfCells) return;
+    if (!_highlightEnabled || index >= _numberOfCells) return;
     
     [_highlightedIndexes addIndex:index];
     
@@ -734,19 +765,13 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 }
 
 - (void)_unhighlightCellAtIndex:(NSUInteger)index animated:(BOOL)animated {
-    if (index >= _numberOfCells) return;
+    if (!_highlightEnabled || index >= _numberOfCells) return;
     
     [_highlightedIndexes removeIndex:index];
     
     NSString *frameString = _cellFrames[index];
     MDHorizontalListViewCell *cell = _visibleCells[frameString];
     if (cell) [cell setHighlighted:NO animated:animated];
-}
-
-- (void)_updateIndexProgress {
-    if (_allowsMultipleSelection || _allowsNoneSelection) return;
-    
-    [self _updateSelectIndexProgress:_selectedIndexes.firstIndex animated:NO];
 }
 
 - (BOOL)_shouldSelectCellAtIndex:(NSUInteger)index {
@@ -792,19 +817,23 @@ const CGFloat MDHorizontalListViewIndicatorWidthDynamic = CGFLOAT_MAX;
 
 #pragma mark - UIGestureRecognizerDelegate
 
-- (BOOL)gestureRecognizer:(MDHorizontalListTapGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
-    if ([gestureRecognizer isKindOfClass:[MDHorizontalListTapGestureRecognizer class]]) {
-        MDHorizontalListViewCell *cell = (MDHorizontalListViewCell *)gestureRecognizer.view;
-        [self _highlightCellAtIndex:cell.index animated:YES];
-    }
-    return YES;
-}
-
-- (BOOL)gestureRecognizer:(MDHorizontalListTapGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
     if ([gestureRecognizer isKindOfClass:[MDHorizontalListTapGestureRecognizer class]]) {
         MDHorizontalListViewCell *cell = (MDHorizontalListViewCell *)gestureRecognizer.view;
         [self _unhighlightCellAtIndex:cell.index animated:YES];
         return NO;
+    }
+    return YES;
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRequireFailureOfGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    return [otherGestureRecognizer.view isKindOfClass:NSClassFromString(@"UILayoutContainerView")];
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+    if ([gestureRecognizer isKindOfClass:[MDHorizontalListTapGestureRecognizer class]]) {
+        MDHorizontalListViewCell *cell = (MDHorizontalListViewCell *)gestureRecognizer.view;
+        [self _highlightCellAtIndex:cell.index animated:YES];
     }
     return YES;
 }

@@ -25,13 +25,13 @@
 
 - (instancetype)initWithReuseIdentifier:(NSString *)reuseIdentifier {
     NSParameterAssert([reuseIdentifier length]);
-
+    
     if (self = [super initWithFrame:CGRectZero]) {
         _reusableIdentifier = reuseIdentifier;
         _contentView = [[UIView alloc] init];
         _selectionView = [[UIView alloc] init];
         _selectionView.userInteractionEnabled = NO;
-
+        
         [self addSubview:_contentView];
         [self addSubview:_selectionView];
     }
@@ -57,7 +57,7 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-
+    
     _contentView.frame = self.bounds;
     _selectionView.frame = self.bounds;
 }
@@ -70,11 +70,11 @@
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
     _selected = selected;
-
+    
     [self _updateSelectedView:_highlighted || selected animated:animated];
 }
 
-- (void)setSelectedProgress:(CGFloat)progress animated:(BOOL)animated {
+- (void)willSelectAtProgress:(CGFloat)progress animated:(BOOL)animated; {
 }
 
 - (void)setHighlighted:(BOOL)highlighted {
@@ -83,14 +83,14 @@
 
 - (void)setHighlighted:(BOOL)highlighted animated:(BOOL)animated {
     _highlighted = highlighted;
-
+    
     [self _updateSelectedView:highlighted || _selected animated:animated];
 }
 
 - (void)setSelectedColor:(UIColor *)selectedColor {
     if (_selectedColor != selectedColor) {
         _selectedColor = selectedColor;
-
+        
         [self _updateSelectedView:_selected animated:NO];
     }
 }
