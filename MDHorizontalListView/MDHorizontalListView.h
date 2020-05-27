@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+
 #import "MDHorizontalListViewCell.h"
 
 /** Scroll position enum type declaration */
